@@ -6,15 +6,15 @@ import StringIO
 
 # Other valid authorities, as recommended by Tor
 #
-# 86.59.21.38:80		tor26
-# 128.31.0.34:9031		moria1
-# 216.224.124.114:9030	ides
-# 80.190.246.100:80		gabelmoo
-# 140.247.60.64:80		lefkada
-# 194.109.206.212:80	dizum
-# 128.31.0.34:9032		moria2
-# 213.73.91.31:80		dannenberg
-# 208.83.223.34:443		urras
+# 86.59.21.38:80        tor26
+# 128.31.0.34:9031      moria1
+# 216.224.124.114:9030  ides
+# 80.190.246.100:80     gabelmoo
+# 140.247.60.64:80      lefkada
+# 194.109.206.212:80    dizum
+# 128.31.0.34:9032      moria2
+# 213.73.91.31:80       dannenberg
+# 208.83.223.34:443     urras
 #
 # You can also get authorities from the consensus
 # sources attribute
@@ -77,6 +77,10 @@ class Consensus( object ):
 			if hasattr( consensus, processor ):
 				databuffer = getattr( consensus, processor )( keyword, arguments, databuffer )
 		return consensus
+
+	@classmethod
+	def from_file( self, path ):
+		return self.parse( open( path, 'r' ).read() )
 
 	def _process_network_status_version( self, keyword, arguments, databuffer ):
 		if arguments.strip() != str( self.version ):
