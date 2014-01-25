@@ -1,8 +1,13 @@
 import struct
-import StringIO
+import M2Crypto
 
 # The main container for all Tor packets
 # - a cell.
+
+class CertificateType( object ):
+	TLS_LINK  = 1
+	ID_1024   = 2
+	AUTH_1024 = 3
 
 class Commands( object ):
 	PADDING      = 0 # Padding
@@ -71,9 +76,38 @@ class VersionsCommand( Command ):
 			versions.append( struct.unpack( '!H', data[:2] )[0] )
 			data = data[2:]
 		return self( versions )
+	
+	def __repr__( self ):
+		return 'Versions: %s' % ', '.join( map( str, self.versions ) )
 
 class CertificatesCommand( Command ):
 	command = Commands.CERTS
+	certificates = {}
+
+	def __init__( self, certificates ):
+		self.certificates = certificates
+
+	@classmethod
+	def parse( self, data ):
+		n = struct.unpack( '!B', data[0] )[0]
+		data = data[1:]
+		certificates = {}
+		while data:
+			ctype, length = struct.unpack( '!BH', data[0:3] )
+			ctype = [ None, CertificateType.TLS_LINK, CertificateType.ID_1024, CertificateType.AUTH_1024 ][ctype]
+			certificate = data[3:3+length]
+			data = data[3+length:]
+			certificates[ctype] = M2Crypto.X509.load_cert_der_string( certificate )
+		return self( certificates )
+	
+	def __repr__( self ):
+		def _printcertid( cert ):
+			if not cert: return None
+			return cert.get_fingerprint()
+		return 'Link: %s, ID: %s, Auth: %s' % \
+			tuple( map( _printcertid, ( self.certificates.get( CertificateType.TLS_LINK, None ),
+			self.certificates.get( CertificateType.ID_1024, None ),
+			self.certificates.get( CertificateType.AUTH_1024, None ) ) ) )
 
 class AuthChallengeCommand( Command ):
 	command = Commands.AUTH_CHALLENGE
